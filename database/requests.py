@@ -440,3 +440,12 @@ async def update_manual_payment_status(payment_id: int, status: str) -> None:
         stmt = update(ManualPayment).where(ManualPayment.id == payment_id).values(status=status)
         await session.execute(stmt)
         await session.commit()
+
+async def get_pending_manual_payment_by_topic(topic_id: int) -> ManualPayment | None:
+    async with async_session_maker() as session:
+        stmt = select(ManualPayment).where(
+            ManualPayment.topic_id == topic_id,
+            ManualPayment.status == 'pending'
+        )
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()

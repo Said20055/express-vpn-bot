@@ -181,15 +181,22 @@ async def admin_close_topic_command(message: types.Message, bot: Bot):
 @support_router.message(F.chat.id == config.tg_bot.support_chat_id, F.message_thread_id)
 async def admin_reply_to_user_from_topic(message: types.Message, bot: Bot):
     """
-    Пересылает ответ админа пользователю с припиской "Ответ от поддержки".
+    Пересылает ответ оператора пользователю.
+    Сначала ищет по support-теме, затем — по теме ручной оплаты.
     """
-    # Игнорируем сообщения от самого бота
     if message.from_user.id == bot.id:
         return
 
     user_to_reply = await db.get_user_by_support_topic(message.message_thread_id)
+
+    # Fallback: тема принадлежит заявке на ручную оплату
     if not user_to_reply:
-        return
+        mp = await db.get_pending_manual_payment_by_topic(message.message_thread_id)
+        if not mp:
+            return
+        user_to_reply = await db.get_user(mp.user_id)
+        if not user_to_reply:
+            return
 
     try:
         # Формируем нашу "шапку" для сообщения
