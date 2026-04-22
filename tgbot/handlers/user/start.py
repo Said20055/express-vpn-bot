@@ -10,7 +10,8 @@ from aiogram.fsm.context import FSMContext
 from loader import logger
 from database import requests as db
 from marzban.init_client import MarzClientCache
-from tgbot.keyboards.inline import main_menu_keyboard, back_to_main_menu_keyboard
+from tgbot.keyboards.inline import main_menu_keyboard, back_to_main_menu_keyboard, manual_payment_user_keyboard
+from tgbot.states.payment_states import ManualPaymentFSM
 
 # Создаем локальный роутер для этого файла
 start_router = Router()
@@ -29,6 +30,21 @@ async def process_start_command(message: Message, command: CommandObject, bot: B
     full_name = message.from_user.full_name
     username = message.from_user.username
     
+    # Проверяем, не ждёт ли пользователь подтверждения ручной оплаты
+    current_state = await state.get_state()
+    if current_state == ManualPaymentFSM.awaiting_receipt.state:
+        fsm_data = await state.get_data()
+        mp = await db.get_manual_payment_by_id(fsm_data.get("manual_payment_id"))
+        if mp and mp.status == 'pending':
+            await message.answer(
+                "⏳ У вас есть незавершённая заявка на ручную оплату.\n\n"
+                "Оператор рассматривает её. Вы можете отправить квитанцию сюда или отменить заявку.",
+                reply_markup=manual_payment_user_keyboard()
+            )
+            return
+        else:
+            await state.clear()
+
     # 1.1. Регистрируем или получаем пользователя
     user, created = await db.get_or_create_user(user_id, full_name, username)
 

@@ -99,6 +99,7 @@ def admin_main_menu_keyboard() -> InlineKeyboardMarkup:
     builder.button(text="💳 Управление тарифами", callback_data="admin_tariffs_menu")
     builder.button(text="🎁 Промокоды", callback_data="admin_promo_codes")
     builder.button(text="📤 Рассылка", callback_data="admin_broadcast")
+    builder.button(text="💵 Настройки оплаты", callback_data="admin_payment_settings")
     builder.button(text="⬅️ Выйти из админ-панели", callback_data="back_to_main_menu")
     builder.adjust(1)
     return builder.as_markup()
@@ -266,4 +267,37 @@ def back_to_promo_list_keyboard() -> InlineKeyboardMarkup:
     """Клавиатура для возврата к списку промокодов."""
     builder = InlineKeyboardBuilder()
     builder.button(text="⬅️ К списку промокодов", callback_data="admin_promo_codes")
+    return builder.as_markup()
+
+
+# =============================================================================
+# === 4. КЛАВИАТУРЫ ДЛЯ РУЧНОЙ ОПЛАТЫ ===
+# =============================================================================
+
+def manual_payment_user_keyboard() -> InlineKeyboardMarkup:
+    """Показывается пользователю после создания заявки на ручную оплату."""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="❌ Отменить заявку", callback_data="manual_payment_cancel_by_user")
+    builder.adjust(1)
+    return builder.as_markup()
+
+
+def operator_manual_payment_keyboard(payment_id: int) -> InlineKeyboardMarkup:
+    """Закреплённое сообщение в форум-теме для оператора."""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="✅ Подтвердить оплату", callback_data=f"mp_confirm_{payment_id}")
+    builder.button(text="❌ Отклонить", callback_data=f"mp_cancel_{payment_id}")
+    builder.adjust(2)
+    return builder.as_markup()
+
+
+def admin_payment_settings_keyboard(is_enabled: bool) -> InlineKeyboardMarkup:
+    """Меню настроек способа оплаты в админ-панели."""
+    builder = InlineKeyboardBuilder()
+    if is_enabled:
+        builder.button(text="🔴 Выключить ручную оплату (вернуть YooKassa)", callback_data="admin_mp_disable")
+    else:
+        builder.button(text="🟢 Включить ручную оплату (банковский перевод)", callback_data="admin_mp_enable")
+    builder.button(text="⬅️ Назад в админ-меню", callback_data="admin_main_menu")
+    builder.adjust(1)
     return builder.as_markup()

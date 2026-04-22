@@ -10,6 +10,7 @@ class TgBot:
     support_chat_id: int
     transaction_log_topic_id: int
     instruction_video_id: str | None
+    manual_payment_bank_details: str
     @staticmethod
     def from_env(env: Env):
         token = env.str("BOT_TOKEN")
@@ -18,10 +19,15 @@ class TgBot:
         support_chat_id = env.int("SUPPORT_CHAT_ID")
         transaction_log_topic_id = env.int("TRANSACTION_LOG_TOPIC_ID")
         instruction_video_id = env.str("INSTRUCTION_VIDEO_ID", default=None)
+        manual_payment_bank_details = env.str(
+            "MANUAL_PAYMENT_BANK_DETAILS",
+            default="Реквизиты не настроены. Обратитесь к администратору."
+        )
         return TgBot(token=token, admin_ids=admin_ids,
                      support_chat_id=support_chat_id,
                      transaction_log_topic_id=transaction_log_topic_id,
-                     instruction_video_id=instruction_video_id)
+                     instruction_video_id=instruction_video_id,
+                     manual_payment_bank_details=manual_payment_bank_details)
 @dataclass
 class YooKassa:
     shop_id: str

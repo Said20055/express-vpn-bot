@@ -6,6 +6,7 @@ from aiogram.enums import ChatType
 from .start import start_router
 from .profile import profile_router
 from .payment import payment_router
+from .manual_payment import manual_payment_router
 from .instruction import instruction_router
 from .trial_sub import trial_sub_router
 # ... (импорты остальных ваших частей user_router)
@@ -22,6 +23,7 @@ user_router.message.filter(F.chat.type == ChatType.PRIVATE)
 user_router.include_routers(
     start_router,
     profile_router,
+    manual_payment_router,
     payment_router,
     instruction_router,
     trial_sub_router

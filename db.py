@@ -74,6 +74,22 @@ class Channel(Base):
     title: Mapped[str] = mapped_column(String)
     invite_link: Mapped[str] = mapped_column(String)
 
+class BotSettings(Base):
+    __tablename__ = 'bot_settings'
+    key: Mapped[str] = mapped_column(String, primary_key=True)
+    value: Mapped[str] = mapped_column(String, nullable=False)
+
+class ManualPayment(Base):
+    __tablename__ = 'manual_payments'
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('users.user_id', ondelete='CASCADE'))
+    tariff_id: Mapped[int] = mapped_column(BigInteger, ForeignKey('tariffs.id', ondelete='SET NULL'), nullable=True)
+    topic_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    operator_message_id: Mapped[int] = mapped_column(Integer, nullable=True)
+    status: Mapped[str] = mapped_column(String, default='pending')
+    created_at: Mapped[datetime.datetime] = mapped_column(DateTime, default=datetime.datetime.now)
+    final_price: Mapped[float] = mapped_column(Float, nullable=False)
+
 
 # --- 4. Функция для создания таблиц ---
 def setup_database_sync():

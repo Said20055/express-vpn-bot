@@ -119,6 +119,7 @@ def register_global_middlewares(dp: Dispatcher):
 def main_webhook():
     storage = MemoryStorage()
     dp = Dispatcher(storage=storage, marzban=marzban_client)
+    dp.workflow_data['fsm_storage'] = storage
     dp.include_routers(*routers_list)
     register_global_middlewares(dp)
     dp.startup.register(on_startup)
@@ -147,6 +148,7 @@ def main_webhook():
 async def main_polling():
     storage = MemoryStorage()
     dp = Dispatcher(storage=storage, marzban=marzban_client)
+    dp.workflow_data['fsm_storage'] = storage
     dp.include_routers(*routers_list)
     register_global_middlewares(dp)
     

@@ -1,6 +1,6 @@
 # database/requests.py (Полностью исправленная и отрефакторенная версия)
 
-from db import Channel, User, Tariff, PromoCode, UsedPromoCode, async_session_maker
+from db import Channel, User, Tariff, PromoCode, UsedPromoCode, BotSettings, ManualPayment, async_session_maker
 
 from sqlalchemy import select, update, delete, func
 
@@ -359,5 +359,84 @@ async def get_all_channels() -> list[Channel]:
 async def delete_channel(channel_id: int) -> None:
     async with async_session_maker() as session:
         stmt = delete(Channel).where(Channel.channel_id == channel_id)
+        await session.execute(stmt)
+        await session.commit()
+
+
+# =============================================================================
+# --- Функции для настроек бота (BotSettings) ---
+# =============================================================================
+
+async def get_bot_setting(key: str, default: str = None) -> str | None:
+    async with async_session_maker() as session:
+        obj = await session.get(BotSettings, key)
+        return obj.value if obj else default
+
+async def set_bot_setting(key: str, value: str) -> None:
+    async with async_session_maker() as session:
+        obj = await session.get(BotSettings, key)
+        if obj:
+            obj.value = value
+        else:
+            obj = BotSettings(key=key, value=value)
+            session.add(obj)
+        await session.commit()
+
+async def is_manual_payment_enabled() -> bool:
+    val = await get_bot_setting("manual_payment_enabled", "false")
+    return val.lower() == "true"
+
+
+# =============================================================================
+# --- Функции для ручных платежей (ManualPayment) ---
+# =============================================================================
+
+async def create_manual_payment(
+    user_id: int, tariff_id: int, topic_id: int, final_price: float
+) -> ManualPayment:
+    async with async_session_maker() as session:
+        mp = ManualPayment(
+            user_id=user_id, tariff_id=tariff_id,
+            topic_id=topic_id, final_price=final_price, status='pending'
+        )
+        session.add(mp)
+        await session.commit()
+        await session.refresh(mp)
+        return mp
+
+async def get_pending_manual_payment_by_user(user_id: int) -> ManualPayment | None:
+    async with async_session_maker() as session:
+        stmt = select(ManualPayment).where(
+            ManualPayment.user_id == user_id,
+            ManualPayment.status == 'pending'
+        )
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
+
+async def get_manual_payment_by_id(payment_id: int) -> ManualPayment | None:
+    async with async_session_maker() as session:
+        return await session.get(ManualPayment, payment_id)
+
+async def set_manual_payment_operator_msg(payment_id: int, msg_id: int) -> None:
+    async with async_session_maker() as session:
+        stmt = update(ManualPayment).where(ManualPayment.id == payment_id).values(operator_message_id=msg_id)
+        await session.execute(stmt)
+        await session.commit()
+
+async def confirm_manual_payment_atomic(payment_id: int) -> bool:
+    """Атомарно переводит status из 'pending' в 'confirmed'.
+    Возвращает True только если запись действительно была pending (защита от двойного нажатия)."""
+    async with async_session_maker() as session:
+        result = await session.execute(
+            update(ManualPayment)
+            .where(ManualPayment.id == payment_id, ManualPayment.status == 'pending')
+            .values(status='confirmed')
+        )
+        await session.commit()
+        return result.rowcount > 0
+
+async def update_manual_payment_status(payment_id: int, status: str) -> None:
+    async with async_session_maker() as session:
+        stmt = update(ManualPayment).where(ManualPayment.id == payment_id).values(status=status)
         await session.execute(stmt)
         await session.commit()
