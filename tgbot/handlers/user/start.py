@@ -21,7 +21,7 @@ start_router = Router()
 # =============================================================================
 
 @start_router.message(CommandStart())
-async def process_start_command(message: Message, command: CommandObject, bot: Bot, marzban: MarzClientCache):
+async def process_start_command(message: Message, command: CommandObject, bot: Bot, marzban: MarzClientCache, state: FSMContext):
     """
     Единый обработчик команды /start.
     Регистрирует пользователя и обрабатывает реферальные ссылки.

@@ -286,6 +286,9 @@ async def _start_manual_payment_flow(
 
     user_id = call.from_user.id
 
+    # Гарантируем, что пользователь есть в БД (FK-защита)
+    await db.get_or_create_user(user_id, call.from_user.full_name, call.from_user.username)
+
     # Защита: уже есть активная заявка
     existing = await db.get_pending_manual_payment_by_user(user_id)
     if existing:
